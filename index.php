@@ -1,5 +1,7 @@
 <?php
 	require_once('lib/limonade.php');
+	require_once('lib/ongair/whatsprot.class.php');
+
 	date_default_timezone_set('Africa/Nairobi');
 
 	# 1. Setting global options of our application
@@ -29,10 +31,32 @@
 		option('db_conn', $db);
 	}
 
-	dispatch('/', 'home');
+	dispatch_post('/', 'home');
 	function home() {
+		$method = $_POST['method'];
+		$jid = $_POST['jid'];
+		$nickname = $_POST['nickname'];
+		if ($method == "identity") {			
+			$identity = strtolower(sha1($jid, false));
+			// $identity = createIdentity($jid);
+			
+			return json(array( "identity" => $identity ));
+		}
+		elseif ($method == "register") {
+		
+			$identity = createIdentity($jid);
+			$w = new WhatsProt($jid, $identity, $nickname, false);
+
+		}
+
 		return html('home/index.html.php'); # rendering HTML view
 	}
+
+	function createIdentity($username) {
+		return strtolower(sha1($username, false));
+	}
+
+	
 
 	run();
 ?>
