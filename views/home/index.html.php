@@ -1,0 +1,1 @@
+<p>Welcome to the ongair Activator. You should be calling this via API...</p>
