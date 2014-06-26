@@ -35,7 +35,7 @@
 	function home() {
 		$method = $_POST['method'];
 		$jid = $_POST['jid'];
-		$nickname = $_POST['nickname'];
+
 		if ($method == "identity") {			
 			$identity = strtolower(sha1($jid, false));
 			// $identity = createIdentity($jid);
@@ -45,8 +45,25 @@
 		elseif ($method == "register") {
 		
 			$identity = createIdentity($jid);
-			$w = new WhatsProt($jid, $identity, $nickname, false);
+			$nickname = $_POST['nickname'];
+			$code = $_POST['code'];
+			$test = $_POST['test'];
 
+			
+			$password = "";
+			
+
+			if ($test == "yes")
+			{
+				$password = "10weOLsovhm9M5HXCcvJRvcLJeY=";
+			}
+			else {
+				$w = new WhatsProt($jid, $identity, $nickname, false);
+				$result = $w->codeRegister($code);
+				$password = $result->pw;			
+			}
+
+			return json(array( "identity" => $identity, "jid" => $jid, "code" => $code, "password" => $password ));
 		}
 
 		return html('home/index.html.php'); # rendering HTML view
