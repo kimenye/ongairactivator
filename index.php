@@ -53,7 +53,7 @@
 			$password = "";
 			
 
-			if ($test == "yes")
+			if ($test == "yes" || $test = "true")
 			{
 				$password = "10weOLsovhm9M5HXCcvJRvcLJeY=";
 			}
