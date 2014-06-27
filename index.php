@@ -53,9 +53,9 @@
 			$password = "";
 			
 
-			if ($test == "yes" || $test = "true")
+			if ($test == "yes" || $test == "true")
 			{
-				$password = "10weOLsovhm9M5HXCcvJRvcLJeY=";
+				// $password = "10weOLsovhm9M5HXCcvJRvcLJeY=";
 			}
 			else {
 				$w = new WhatsProt($jid, $identity, $nickname, false);
@@ -63,7 +63,7 @@
 				$password = $result->pw;			
 			}
 
-			return json(array( "identity" => $identity, "jid" => $jid, "code" => $code, "password" => $password ));
+			return json(array( "identity" => $identity, "jid" => $jid, "test" => $test, "code" => $code, "password" => $password ));
 		}
 
 		return html('home/index.html.php'); # rendering HTML view
