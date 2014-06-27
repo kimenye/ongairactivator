@@ -8,27 +8,27 @@
 	function configure()
 	{
 		# A. Setting environment
-		$localhost = preg_match('/^localhost(\:\d+)?/', $_SERVER['HTTP_HOST']);
-		$env =  $localhost ? ENV_DEVELOPMENT : ENV_PRODUCTION;
+		// $localhost = preg_match('/^localhost(\:\d+)?/', $_SERVER['HTTP_HOST']);
+		// $env =  $localhost ? ENV_DEVELOPMENT : ENV_PRODUCTION;
 
-		option('env', $env);
+		// option('env', $env);
   
-  		# B. Initiate db connexion
-		$dsn = $env == ENV_PRODUCTION ? 'mysql:host=127.0.0.1;port=3306;dbname=<database>' : 'mysql:host=127.0.0.1;port=8889;dbname=wassup';
-		$username = $env == ENV_PRODUCTION ? '<username>' : 'root';
-		$pass = $env == ENV_PRODUCTION ? '<password>' : 'root';
-		
-		try
-		{
-	  		$db = new PDO($dsn, $username, $pass, array( PDO::ATTR_PERSISTENT => false));
-		}
-		catch(PDOException $e)
-		{
-	  		halt("Connexion failed: ".$e); # raises an error / renders the error page and exit.
-		}
 
-		$db->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING );
-		option('db_conn', $db);
+		// $dsn = $env == ENV_PRODUCTION ? 'mysql:host=127.0.0.1;port=3306;dbname=<database>' : 'mysql:host=127.0.0.1;port=8889;dbname=wassup';
+		// $username = $env == ENV_PRODUCTION ? '<username>' : 'root';
+		// $pass = $env == ENV_PRODUCTION ? '<password>' : 'root';
+		
+		// try
+		// {
+	 //  		$db = new PDO($dsn, $username, $pass, array( PDO::ATTR_PERSISTENT => false));
+		// }
+		// catch(PDOException $e)
+		// {
+	 //  		halt("Connexion failed: ".$e); # raises an error / renders the error page and exit.
+		// }
+
+		// $db->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING );
+		// option('db_conn', $db);
 	}
 
 	dispatch_post('/', 'home');
@@ -58,9 +58,9 @@
 				$password = "10weOLsovhm9M5HXCcvJRvcLJeY=";
 			}
 			else {
-				$w = new WhatsProt($jid, $identity, $nickname, false);
-				$result = $w->codeRegister($code);
-				$password = $result->pw;			
+				// $w = new WhatsProt($jid, $identity, $nickname, false);
+				// $result = $w->codeRegister($code);
+				// $password = $result->pw;			
 			}
 
 			return json(array( "identity" => $identity, "jid" => $jid, "code" => $code, "password" => $password ));
