@@ -58,9 +58,9 @@
 				$password = "10weOLsovhm9M5HXCcvJRvcLJeY=";
 			}
 			else {
-				// $w = new WhatsProt($jid, $identity, $nickname, false);
-				// $result = $w->codeRegister($code);
-				// $password = $result->pw;			
+				$w = new WhatsProt($jid, $identity, $nickname, false);
+				$result = $w->codeRegister($code);
+				$password = $result->pw;			
 			}
 
 			return json(array( "identity" => $identity, "jid" => $jid, "code" => $code, "password" => $password ));
