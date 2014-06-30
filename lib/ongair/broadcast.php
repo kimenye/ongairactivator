@@ -36,7 +36,7 @@
 	    }
 	}
 
-	$w = new WhatsProt($username, $identity, $nickname, false);
+	$w = new WhatsProt($username, $identity, $nickname, true);
 	$w->connect();
 	$w->loginWithPassword($password);
 
@@ -56,6 +56,10 @@
 	elseif ($method == "sendImage") {
 		// $targets = explode(",", $targets);
 		$w->sendMessageImage($targets, $args, false);
+	}
+	elseif ($method == "sendBroadcast") {
+		$targets = explode(",", $targets);
+		$w->sendBroadcastMessage($targets, $args);
 	}
 	elseif ($method == "sendBroadcastImage") {
 		$targets = explode(",", $targets);

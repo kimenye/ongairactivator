@@ -40,7 +40,7 @@
 			$identity = strtolower(sha1($jid, false));
 			// $identity = createIdentity($jid);
 			
-			return json(array( "identity" => $identity ));
+			return json(array( "identity" => $identity, "db" => getenv('DB') ));
 		}
 		elseif ($method == "register") {
 		
@@ -64,6 +64,43 @@
 			}
 
 			return json(array( "identity" => $identity, "jid" => $jid, "test" => $test, "code" => $code, "password" => $password ));
+		}
+		elseif ($method == "broadcastImage") {
+			# code...
+			$identity = createIdentity($jid);
+			$nickname = $_POST['nickname'];
+			$password = $_POST['password'];
+			$contacts = $_POST['contacts'];
+			$image = $_POST['image'];
+
+			$w = new WhatsProt($jid, $identity, $nickname, true);
+			$w->connect();
+			$w->loginWithPassword($password);
+
+			$targets = explode(",", $contacts);
+			$result = $w->sendBroadcastImage($targets, $image, false);
+
+			sleep(5);
+			return json(array( "status" => $result, "image" => $image, "targets" => $targets ));
+
+		}
+		elseif ($method == "broadcastMessage") {			
+			# code...
+			$identity = createIdentity($jid);
+			$nickname = $_POST['nickname'];
+			$password = $_POST['password'];
+			$contacts = $_POST['contacts'];
+			$message = $_POST['message'];
+
+			$w = new WhatsProt($jid, $identity, $nickname, true);
+			$w->connect();
+			$w->loginWithPassword($password);
+
+			$targets = explode(",", $contacts);
+			$result = $w->sendBroadcastMessage($targets, $message);
+
+			sleep(5);
+			return json(array( "status" => $result, "message" => $message, "targets" => $targets ));
 		}
 
 		return html('home/index.html.php'); # rendering HTML view
