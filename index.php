@@ -65,6 +65,47 @@
 
 			return json(array( "identity" => $identity, "jid" => $jid, "test" => $test, "code" => $code, "password" => $password ));
 		}
+		elseif ($method == "setProfilePicture") {
+			$identity = createIdentity($jid);
+			$nickname = $_POST['nickname'];
+			$password = $_POST['password'];
+			$image_url = $_POST['image_url'];
+
+			$ch = curl_init($image_url);
+			$fp = fopen('tmp/profile.jpg', 'wb');
+			curl_setopt($ch, CURLOPT_FILE, $fp);
+			curl_setopt($ch, CURLOPT_HEADER, 0);
+			curl_exec($ch);
+			curl_close($ch);
+			fclose($fp);
+
+			$w = new WhatsProt($jid, $identity, $nickname, false);
+			$w->connect();
+			$w->loginWithPassword($password);
+
+			$result = $w->sendSetProfilePicture(realpath('tmp/profile.jpg'));
+
+			sleep(5);
+			// return json(array( "status" => $result, "image" => $image_url ));			
+			
+			return json(array ( "success" => true, "file" => realpath('tmp/profile.jpg') ));
+		}
+		elseif ($method == "setStatusMessage") {
+			$identity = createIdentity($jid);
+			$nickname = $_POST['nickname'];
+			$password = $_POST['password'];
+			$status = $_POST['status'];
+
+			$w = new WhatsProt($jid, $identity, $nickname, false);
+			$w->connect();
+			$w->loginWithPassword($password);
+
+			$w->sendStatusUpdate($status);
+
+			sleep(5);
+			
+			return json(array ( "success" => true ));
+		}		
 		elseif ($method == "broadcastImage") {
 			# code...
 			$identity = createIdentity($jid);
