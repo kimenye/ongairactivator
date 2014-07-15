@@ -51,6 +51,7 @@
 
 			
 			$password = "";
+			$test = "no";
 			
 
 			if ($test == "yes" || $test == "true")
