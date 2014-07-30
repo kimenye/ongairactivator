@@ -4,31 +4,33 @@
 
 	date_default_timezone_set('Africa/Nairobi');
 
-	# 1. Setting global options of our application
-	function configure()
+	// $syncResult = [];
+	// $pollMessages = true;
+	// $GLOBALS['syncResult'] = [];
+	// $GLOBALS['pollMessages'] = true;
+
+
+	function onSyncResult($result)
 	{
-		# A. Setting environment
-		// $localhost = preg_match('/^localhost(\:\d+)?/', $_SERVER['HTTP_HOST']);
-		// $env =  $localhost ? ENV_DEVELOPMENT : ENV_PRODUCTION;
+		$syncResult = [];
+		// echo "Result ".$result."\r\n";
+	    foreach($result->existing as $number)
+	    {
+	    	// echo "Number ".$number." exists \r\n";
+	    	array_push($syncResult, $number);
+	    }
 
-		// option('env', $env);
-  
+	    // foreach($result->nonExisting as $number) {
+	    	// echo "Number ".$number." does not exist\r\n";
+	    // }
 
-		// $dsn = $env == ENV_PRODUCTION ? 'mysql:host=127.0.0.1;port=3306;dbname=<database>' : 'mysql:host=127.0.0.1;port=8889;dbname=wassup';
-		// $username = $env == ENV_PRODUCTION ? '<username>' : 'root';
-		// $pass = $env == ENV_PRODUCTION ? '<password>' : 'root';
-		
-		// try
-		// {
-	 //  		$db = new PDO($dsn, $username, $pass, array( PDO::ATTR_PERSISTENT => false));
-		// }
-		// catch(PDOException $e)
-		// {
-	 //  		halt("Connexion failed: ".$e); # raises an error / renders the error page and exit.
-		// }
+	    // array_push($GLOBALS['syncResult'], "254705866564");
 
-		// $db->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING );
-		// option('db_conn', $db);
+
+	    // $pollMessages = false;
+	    // exit(0);
+	    // $GLOBALS['pollMessages'] = false;
+	    return json(array( "status" => true, "registered" => $syncResult ));
 	}
 
 	dispatch_post('/', 'home');
@@ -41,6 +43,17 @@
 			// $identity = createIdentity($jid);
 			
 			return json(array( "identity" => $identity, "db" => getenv('DB') ));
+		}
+		elseif ($method == "request") {
+			$identity = createIdentity($jid);
+			$nickname = $_POST['nickname'];
+
+			$w = new WhatsProt($jid, $identity, $nickname, false);
+			$result = $w->codeRequest('sms');
+			
+			# code...
+
+			return json(array( "jid" => $jid, "result" => $result));
 		}
 		elseif ($method == "register") {
 		
@@ -142,6 +155,28 @@
 
 			sleep(5);
 			return json(array( "status" => $result, "message" => $message, "targets" => $targets ));
+		}
+		elseif ($method == "sendSync") {
+			# code...
+			$identity = createIdentity($jid);
+			$nickname = $_POST['nickname'];
+			$password = $_POST['password'];
+			$contacts = $_POST['contacts'];
+
+			$targets = explode(",", $contacts);
+
+			$w = new WhatsProt($jid, $identity, $nickname, true);
+			$w->connect();
+			$w->loginWithPassword($password);
+
+			$w->eventManager()->bind('onGetSyncResult', 'onSyncResult');
+			
+
+			while(true) {				
+				$w->pollMessages();
+			}
+			// return json(array( "status" => true, "registered" => $GLOBALS['syncResult'], "id" => $identity ));
+
 		}
 
 		return html('home/index.html.php'); # rendering HTML view

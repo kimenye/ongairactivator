@@ -10,34 +10,32 @@
 	$args = $argv[6];
 	$targets = $argv[7];
 
-	// echo "Username: ".$username."\r\n";
-	// echo "Password: ".$password."\r\n";
-	// echo "Nickname: ".$nickname."\r\n";
-	// echo "Identity: ".$identity."\r\n";
-	// echo "Method: ".$method."\r\n";
-	// echo "Args: ".$args."\r\n";
-	// echo "Targets:".$targets."\r\n";
+	echo "Username: ".$username."\r\n";
+	echo "Password: ".$password."\r\n";
+	echo "Nickname: ".$nickname."\r\n";
+	echo "Identity: ".$identity."\r\n";
+	echo "Method: ".$method."\r\n";
+	echo "Args: ".$args."\r\n";
+	echo "Targets:".$targets."\r\n";
 
 	function onSyncResult($result)
 	{
+		// echo "Result ".$result."\r\n";
 	    foreach($result->existing as $number)
 	    {
-	        // echo "$number exists<br />";
-	        // echo $number;
-			$r = new HttpRequest($args, HttpRequest::METH_POST);
-			$r->addPostFields(array('jid' => $number));
-
-			try {
-			    echo $r->send()->getBody();
-			    die();
-			} catch (HttpException $ex) {
-			    echo $ex;
-			}
+	    	echo "Number ".$number." exists \r\n";
 	    }
+
+	    foreach($result->nonExisting as $number) {
+	    	echo "Number ".$number." does not exist\r\n";
+	    }
+
+	    exit(0);
 	}
 
 	$w = new WhatsProt($username, $identity, $nickname, true);
 	$w->connect();
+	echo "Logging in";
 	$w->loginWithPassword($password);
 
 	if ($method == "sendStatusUpdate") {
@@ -69,15 +67,18 @@
 		$targets = explode(",", $targets);
 		$w->sendBroadcastAudio($targets, $args, false);	
 	}
-	elseif ($method == "syncContacts") {
+	elseif ($method == "sendSync") {
+		$targets = explode(",", $targets);
+		echo "Logging in";
+
 		$w->eventManager()->bind('onGetSyncResult', 'onSyncResult');
-		$w->sendSync(array($targets));
+		$w->sendSync($targets);
 
 		while(true) {
 			$w->pollMessages();
 		}
 	}
 	
-	sleep(5);
+	sleep(15);
 	exit(0);
 ?>
