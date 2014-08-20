@@ -9,6 +9,7 @@
 	$method = $argv[5];
 	$args = $argv[6];
 	$targets = $argv[7];
+	$externalId = $argv[8];
 
 	echo "Username: ".$username."\r\n";
 	echo "Password: ".$password."\r\n";
@@ -32,6 +33,7 @@
 
 	    exit(0);
 	}
+	
 
 	$w = new WhatsProt($username, $identity, $nickname, true);
 	$w->connect();
@@ -61,11 +63,13 @@
 	}
 	elseif ($method == "sendBroadcastImage") {
 		$targets = explode(",", $targets);
-		$w->sendBroadcastImage($targets, $args, false);
+		$res = $w->sendBroadcastImage($targets, $args, $externalId, false);
+		
+		// $w->eventManager()->bind('onMediaMessageSent', 'onMediaMessageSent');
 	}
 	elseif ($method == "sendBroadcastAudio") {
 		$targets = explode(",", $targets);
-		$w->sendBroadcastAudio($targets, $args, false);	
+		$w->sendBroadcastAudio($targets, $args, false);					
 	}
 	elseif ($method == "sendSync") {
 		$targets = explode(",", $targets);
@@ -75,10 +79,10 @@
 		$w->sendSync($targets);
 
 		while(true) {
-			$w->pollMessages();
+			$w->pollMessages(false);
 		}
 	}
 	
-	sleep(15);
+	sleep(30);
 	exit(0);
 ?>

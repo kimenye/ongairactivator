@@ -39,43 +39,17 @@
 		$jid = $_POST['jid'];
 
 		if ($method == "identity") {			
-			$identity = strtolower(sha1($jid, false));
-			// $identity = createIdentity($jid);
-			
-			return json(array( "identity" => $identity, "db" => getenv('DB') ));
-		}
-		elseif ($method == "request") {
+			$identity = strtolower(sha1($jid, false));			
+			return json(array( "identity" => $identity ));
+		}		
+		elseif ($method == "register") {		
 			$identity = createIdentity($jid);
 			$nickname = $_POST['nickname'];
-
+			$code = $_POST['code'];			
+						
 			$w = new WhatsProt($jid, $identity, $nickname, false);
-			$result = $w->codeRequest('sms');
-			
-			# code...
-
-			return json(array( "jid" => $jid, "result" => $result));
-		}
-		elseif ($method == "register") {
-		
-			$identity = createIdentity($jid);
-			$nickname = $_POST['nickname'];
-			$code = $_POST['code'];
-			$test = $_POST['test'];
-
-			
-			$password = "";
-			$test = "no";
-			
-
-			if ($test == "yes" || $test == "true")
-			{
-				// $password = "10weOLsovhm9M5HXCcvJRvcLJeY=";
-			}
-			else {
-				$w = new WhatsProt($jid, $identity, $nickname, false);
-				$result = $w->codeRegister($code);
-				$password = $result->pw;			
-			}
+			$result = $w->codeRegister($code);
+			$password = $result->pw;						
 
 			return json(array( "identity" => $identity, "jid" => $jid, "test" => $test, "code" => $code, "password" => $password ));
 		}
@@ -100,11 +74,10 @@
 			$result = $w->sendSetProfilePicture(realpath('tmp/profile.jpg'));
 
 			sleep(5);
-			// return json(array( "status" => $result, "image" => $image_url ));			
-			
-			return json(array ( "success" => true, "file" => realpath('tmp/profile.jpg') ));
+									
+			return json(array ( "success" => true ));
 		}
-		elseif ($method == "setStatusMessage") {
+		elseif ($method == "profile_setStatus") {
 			$identity = createIdentity($jid);
 			$nickname = $_POST['nickname'];
 			$password = $_POST['password'];
@@ -117,46 +90,30 @@
 			$w->sendStatusUpdate($status);
 
 			sleep(5);
+
 			
 			return json(array ( "success" => true ));
 		}		
-		elseif ($method == "broadcastImage") {
+		elseif ($method == "broadcast_Image") {
 			# code...
 			$identity = createIdentity($jid);
 			$nickname = $_POST['nickname'];
 			$password = $_POST['password'];
-			$contacts = $_POST['contacts'];
+			$contacts = $_POST['targets'];
 			$image = $_POST['image'];
+			$externalId = $_POST['externalId'];
 
-			$w = new WhatsProt($jid, $identity, $nickname, true);
+			$w = new WhatsProt($jid, $identity, $nickname, false);
 			$w->connect();
 			$w->loginWithPassword($password);
 
 			$targets = explode(",", $contacts);
-			$result = $w->sendBroadcastImage($targets, $image, false);
+			$result = $w->sendBroadcastImage($targets, $image, $externalId, false);
 
-			sleep(5);
-			return json(array( "status" => $result, "image" => $image, "targets" => $targets ));
+			sleep(10);
+			return json(array( "status" => null, "image" => $image, "targets" => $targets, "externalId" =>  $externalId ));
 
-		}
-		elseif ($method == "broadcastMessage") {			
-			# code...
-			$identity = createIdentity($jid);
-			$nickname = $_POST['nickname'];
-			$password = $_POST['password'];
-			$contacts = $_POST['contacts'];
-			$message = $_POST['message'];
-
-			$w = new WhatsProt($jid, $identity, $nickname, true);
-			$w->connect();
-			$w->loginWithPassword($password);
-
-			$targets = explode(",", $contacts);
-			$result = $w->sendBroadcastMessage($targets, $message);
-
-			sleep(5);
-			return json(array( "status" => $result, "message" => $message, "targets" => $targets ));
-		}
+		}		
 		elseif ($method == "sendSync") {
 			# code...
 			$identity = createIdentity($jid);
@@ -174,7 +131,7 @@
 			
 
 			while(true) {				
-				$w->pollMessages();
+				$w->pollMessages(false);
 			}
 			// return json(array( "status" => true, "registered" => $GLOBALS['syncResult'], "id" => $identity ));
 
@@ -186,8 +143,6 @@
 	function createIdentity($username) {
 		return strtolower(sha1($username, false));
 	}
-
-	
 
 	run();
 ?>

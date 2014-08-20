@@ -535,12 +535,12 @@ class WhatsProt
      * @param  string  $path          URL or local path to the image file to send
      * @param  bool $storeURLmedia Keep a copy of the audio file on your server
      */
-    public function sendBroadcastImage($targets, $path, $storeURLmedia = false)
+    public function sendBroadcastImage($targets, $path, $externalId = null, $storeURLmedia = false)
     {
         if (!is_array($targets)) {
             $targets = array($targets);
         }
-        $this->sendMessageImage($targets, $path, $storeURLmedia);
+        $this->sendMessageImage($targets, $path, $storeURLmedia, $externalId);
     }
 
     /**
@@ -1014,11 +1014,11 @@ class WhatsProt
      * @param  bool $storeURLmedia Keep copy of file
      * @return bool
      */
-    public function sendMessageImage($to, $filepath, $storeURLmedia = false)
+    public function sendMessageImage($to, $filepath, $storeURLmedia = false, $externalId=null)
     {
         $allowedExtensions = array('jpg', 'jpeg', 'gif', 'png');
         $size = 5 * 1024 * 1024; // Easy way to set maximum file size for this media type.
-        return $this->sendCheckAndSendMedia($filepath, $size, $to, 'image', $allowedExtensions, $storeURLmedia);
+        return $this->sendCheckAndSendMedia($filepath, $size, $to, 'image', $allowedExtensions, $storeURLmedia, $externalId);
     }
 
     /**
@@ -2449,6 +2449,7 @@ class WhatsProt
 
         $filepath = $this->mediaQueue[$id]['filePath'];
         $to = $this->mediaQueue[$id]['to'];
+        $externalId = $this->mediaQueue[$id]['external_id'];
 
         switch ($filetype) {
             case "image":
@@ -2464,7 +2465,7 @@ class WhatsProt
 
         $mediaNode = new ProtocolNode("media", $mediaAttribs, null, $icon);
         if (is_array($to)) {
-            $this->sendBroadcast($to, $mediaNode, "media");
+            $id = $this->sendBroadcast($to, $mediaNode, "media");
         } else {
             $this->sendMessageNode($to, $mediaNode);
         }
@@ -2478,6 +2479,20 @@ class WhatsProt
             $filesize,
             $icon
         );
+
+        // update the server
+        $url = "http://localhost:3000/job_logs/".$externalId."/update_job?whatsapp_message_id=".$id;
+        
+        $headers = array('Content-Type: application/json');
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_POST, 1);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        $response = curl_exec($curl);
+        curl_close($curl);
+
+
         return true;
     }
 
@@ -2553,13 +2568,13 @@ class WhatsProt
      * @param bool $storeURLmedia Keep a copy of the media file
      * @return bool
      */
-    protected function sendCheckAndSendMedia($filepath, $maxSize, $to, $type, $allowedExtensions, $storeURLmedia)
+    protected function sendCheckAndSendMedia($filepath, $maxSize, $to, $type, $allowedExtensions, $storeURLmedia, $externalId = null)
     {
         if ($this->getMediaFile($filepath, $maxSize) == true) {
             if (in_array($this->mediaFileInfo['fileextension'], $allowedExtensions)) {
                 $b64hash = base64_encode(hash_file("sha256", $this->mediaFileInfo['filepath'], true));
                 //request upload
-                $this->sendRequestFileUpload($b64hash, $type, $this->mediaFileInfo['filesize'], $this->mediaFileInfo['filepath'], $to);
+                $this->sendRequestFileUpload($b64hash, $type, $this->mediaFileInfo['filesize'], $this->mediaFileInfo['filepath'], $to, $externalId);
                 $this->processTempMediaFile($storeURLmedia);
                 return true;
             } else {
@@ -2776,7 +2791,7 @@ class WhatsProt
      * @param string $to
      *  Recipient
      */
-    protected function sendRequestFileUpload($b64hash, $type, $size, $filepath, $to)
+    protected function sendRequestFileUpload($b64hash, $type, $size, $filepath, $to, $externalId=null)
     {
         $hash = array();
         $hash["hash"] = $b64hash;
@@ -2797,7 +2812,7 @@ class WhatsProt
         }
         //add to queue
         $messageId = $this->createMsgId("message");
-        $this->mediaQueue[$id] = array("messageNode" => $node, "filePath" => $filepath, "to" => $to, "message_id" => $messageId);
+        $this->mediaQueue[$id] = array("messageNode" => $node, "filePath" => $filepath, "to" => $to, "message_id" => $messageId, "external_id" => $externalId);
 
         $this->sendNode($node);
         $this->waitForServer($hash["id"]);
