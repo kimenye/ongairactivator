@@ -10,28 +10,28 @@
 	// $GLOBALS['pollMessages'] = true;
 
 
-	function onSyncResult($result)
-	{
-		$syncResult = [];
-		// echo "Result ".$result."\r\n";
-	    foreach($result->existing as $number)
-	    {
-	    	// echo "Number ".$number." exists \r\n";
-	    	array_push($syncResult, $number);
-	    }
+	// function onSyncResult($result)
+	// {
+	// 	$syncResult = [];
+	// 	// echo "Result ".$result."\r\n";
+	//     foreach($result->existing as $number)
+	//     {
+	//     	// echo "Number ".$number." exists \r\n";
+	//     	array_push($syncResult, $number);
+	//     }
 
-	    // foreach($result->nonExisting as $number) {
-	    	// echo "Number ".$number." does not exist\r\n";
-	    // }
+	//     // foreach($result->nonExisting as $number) {
+	//     	// echo "Number ".$number." does not exist\r\n";
+	//     // }
 
-	    // array_push($GLOBALS['syncResult'], "254705866564");
+	//     // array_push($GLOBALS['syncResult'], "254705866564");
 
 
-	    // $pollMessages = false;
-	    // exit(0);
-	    // $GLOBALS['pollMessages'] = false;
-	    return json(array( "status" => true, "registered" => $syncResult ));
-	}
+	//     // $pollMessages = false;
+	//     // exit(0);
+	//     // $GLOBALS['pollMessages'] = false;
+	//     return json(array( "status" => true, "registered" => $syncResult ));
+	// }
 
 	dispatch_post('/', 'home');
 	function home() {
