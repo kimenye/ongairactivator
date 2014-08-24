@@ -41,6 +41,14 @@
 		if ($method == "identity") {			
 			$identity = strtolower(sha1($jid, false));			
 			return json(array( "identity" => $identity ));
+		}
+		elseif ($method == "request") {
+			$identity = createIdentity($jid);
+			$nickname = $_POST['nickname'];			
+						
+			$w = new WhatsProt($jid, $identity, $nickname, false);
+			$result = $w->codeRequest('sms');
+			return json(array("result" => result->status));
 		}		
 		elseif ($method == "register") {		
 			$identity = createIdentity($jid);
@@ -103,7 +111,7 @@
 			$image = $_POST['image'];
 			$externalId = $_POST['externalId'];
 
-			$w = new WhatsProt($jid, $identity, $nickname, false);
+			$w = new WhatsProt($jid, $identity, $nickname, true);
 			$w->connect();
 			$w->loginWithPassword($password);
 
@@ -111,7 +119,7 @@
 			$result = $w->sendBroadcastImage($targets, $image, $externalId, false);
 
 			sleep(10);
-			return json(array( "status" => null, "image" => $image, "targets" => $targets, "externalId" =>  $externalId ));
+			return json(array( "status" => true, "image" => $image, "targets" => $targets, "externalId" =>  $externalId ));
 
 		}		
 		elseif ($method == "sendSync") {
@@ -131,7 +139,7 @@
 			
 
 			while(true) {				
-				$w->pollMessages(false);
+				$w->pollMessage(false);
 			}
 			// return json(array( "status" => true, "registered" => $GLOBALS['syncResult'], "id" => $identity ));
 

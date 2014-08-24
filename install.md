@@ -58,3 +58,6 @@ sudo nano /etc/apache2/mods-enabled/dir.conf
 
 	</VirtualHost>
 ```
+
+# Install curl
+sudo apt-get install php5-curl

@@ -46,13 +46,14 @@ class WhatsProt
     const WHATSAPP_SERVER = 's.whatsapp.net';               // The hostname used to login/send messages.
     const WHATSAPP_UPLOAD_HOST = 'https://mms.whatsapp.net/client/iphone/upload.php'; // The upload host.
     const WHATSAPP_DEVICE = 'Android';                      // The device name.
-    const WHATSAPP_VER = '2.11.209';                // The WhatsApp version.
-    const WHATSAPP_USER_AGENT = 'WhatsApp/2.11.209 Android/4.3 Device/GalaxyS3';// User agent used in request/registration code.
+    const WHATSAPP_VER = '2.11.301';                // The WhatsApp version.
+    const WHATSAPP_USER_AGENT = 'WhatsApp/2.11.301 Android/4.3 Device/GalaxyS3';// User agent used in request/registration code.
 
     /**
      * Property declarations.
      */
     protected $accountInfo;             // The AccountInfo object.
+    protected $challengeFilename = 'nextChallenge.dat';
     protected $challengeData;           //
     protected $debug;                   // Determines whether debug mode is on or off.
     protected $event;                   // An instance of the WhatsAppEvent class.
@@ -105,6 +106,15 @@ class WhatsProt
         }
         $this->name = $nickname;
         $this->loginStatus = static::DISCONNECTED_STATUS;
+    }
+
+    /**
+     * If you need use diferent challenge fileName you can use this
+     *
+     * @param string $filename
+     */
+    public function setChallengeName($filename){
+        $this->challengeFilename = $filename;
     }
 
     /**
@@ -221,9 +231,9 @@ class WhatsProt
 
         if ($response->status != 'ok') {
             $this->eventManager()->fireCodeRegisterFailed(
-                $this->phoneNumber, 
-                $response->status, 
-                $response->reason, 
+                $this->phoneNumber,
+                $response->status,
+                $response->reason,
                 $response->retry_after
             );
             if ($this->debug) {
@@ -333,18 +343,18 @@ class WhatsProt
         } else if ($response->status != 'sent') {
             if (isset($response->reason) && $response->reason == "too_recent") {
                 $this->eventManager()->fireCodeRequestFailedTooRecent(
-                    $this->phoneNumber, 
-                    $method, 
-                    $response->reason, 
+                    $this->phoneNumber,
+                    $method,
+                    $response->reason,
                     $response->retry_after
                 );
                 $minutes = round($response->retry_after / 60);
                 throw new Exception("Code already sent. Retry after $minutes minutes.");
             } else {
                 $this->eventManager()->fireCodeRequestFailed(
-                    $this->phoneNumber, 
-                    $method, 
-                    $response->reason, 
+                    $this->phoneNumber,
+                    $method,
+                    $response->reason,
                     $response->param
                 );
                 throw new Exception('There was a problem trying to request the code.');
@@ -376,10 +386,10 @@ class WhatsProt
         } else {
             if ($this->debug) {
                 print_r("Firing onConnectError\n");
-            }            
+            }
             $this->eventManager()->fireConnectError(
-               $this->phoneNumber, 
-               $this->socket                
+               $this->phoneNumber,
+               $this->socket
             );
         }
     }
@@ -400,7 +410,7 @@ class WhatsProt
 
     /**
      * Gets a new micro event dispatcher.
-     * 
+     *
      * @return WhatsAppEvent The event manager.
      */
     public function eventManager()
@@ -458,7 +468,7 @@ class WhatsProt
     public function loginWithPassword($password)
     {
         $this->password = $password;
-        $challengeData = @file_get_contents("nextChallenge.dat");
+        $challengeData = @file_get_contents($this->challengeFilename);
         if($challengeData) {
             $this->challengeData = $challengeData;
         }
@@ -466,24 +476,11 @@ class WhatsProt
     }
 
     /**
-     * Pull from the socket, and place incoming messages in the message queue.
-     */
-    public function pollMessages($autoReceipt = true)
-    {
-        $stanza = $this->readStanza();
-        while($stanza)
-        {
-            $this->processInboundData($stanza, $autoReceipt);
-            $stanza = $this->readStanza();
-        }
-    }
-
-    /**
      * Fetch a single message node
      * @param bool $autoReceipt
      * @return bool
      */
-    public function pollMessage($autoReceipt = true)
+    public function pollMessage($autoReceipt = false)
     {
         $stanza = $this->readStanza();
         if($stanza)
@@ -515,12 +512,12 @@ class WhatsProt
      * @param  string  $path          URL or local path to the audio file to send
      * @param  bool $storeURLmedia Keep a copy of the audio file on your server
      */
-    public function sendBroadcastAudio($targets, $path, $storeURLmedia = false)
+    public function sendBroadcastAudio($targets, $path, $storeURLmedia = false, $fsize = 0, $fhash = "")
     {
         if (!is_array($targets)) {
             $targets = array($targets);
         }
-        $this->sendMessageAudio($targets, $path, $storeURLmedia);
+        $this->sendMessageAudio($targets, $path, $storeURLmedia, $fsize, $fhash);
     }
 
     /**
@@ -535,12 +532,12 @@ class WhatsProt
      * @param  string  $path          URL or local path to the image file to send
      * @param  bool $storeURLmedia Keep a copy of the audio file on your server
      */
-    public function sendBroadcastImage($targets, $path, $externalId = null, $storeURLmedia = false)
+    public function sendBroadcastImage($targets, $path, $externalId = null, $storeURLmedia = false, $fsize = 0, $fhash = "")
     {
         if (!is_array($targets)) {
             $targets = array($targets);
         }
-        $this->sendMessageImage($targets, $path, $storeURLmedia, $externalId);
+        $this->sendMessageImage($targets, $path, $storeURLmedia, $externalId, $fsize, $fhash);
     }
 
     /**
@@ -602,12 +599,12 @@ class WhatsProt
      * @param  string  $path          URL or local path to the video file to send
      * @param  bool $storeURLmedia Keep a copy of the audio file on your server
      */
-    public function sendBroadcastVideo($targets, $path, $storeURLmedia = false)
+    public function sendBroadcastVideo($targets, $path, $storeURLmedia = false, $fsize = 0, $fhash = "")
     {
         if (!is_array($targets)) {
             $targets = array($targets);
         }
-        $this->sendMessageVideo($targets, $path, $storeURLmedia);
+        $this->sendMessageVideo($targets, $path, $storeURLmedia, $fsize, $fhash);
     }
 
     /**
@@ -870,6 +867,18 @@ class WhatsProt
         return $groupId;
     }
 
+    public function SendSetGroupSubject($gjid, $subject)
+    {
+        $child = new ProtocolNode("subject", array("value" => $subject), null, null);
+        $node = new ProtocolNode("iq", array(
+            "id" => $this->createMsgId("set_group_subject"),
+            "type" => "set",
+            "to" => $this->getJID($gjid),
+            "xmlns" => "w:g"
+        ), array($child), null);
+        $this->sendNode($node);
+    }
+
     /**
      * End or delete a group chat
      *
@@ -988,9 +997,16 @@ class WhatsProt
      */
     public function sendMessageAudio($to, $filepath, $storeURLmedia = false)
     {
-        $allowedExtensions = array('3gp', 'caf', 'wav', 'mp3', 'wma', 'ogg', 'aif', 'aac', 'm4a');
-        $size = 10 * 1024 * 1024; // Easy way to set maximum file size for this media type.
-        return $this->sendCheckAndSendMedia($filepath, $size, $to, 'audio', $allowedExtensions, $storeURLmedia);
+    	if ($fsize==0 || $fhash == "")
+    	{
+        	$allowedExtensions = array('3gp', 'caf', 'wav', 'mp3', 'wma', 'ogg', 'aif', 'aac', 'm4a');
+        	$size = 10 * 1024 * 1024; // Easy way to set maximum file size for this media type.
+        	return $this->sendCheckAndSendMedia($filepath, $size, $to, 'audio', $allowedExtensions, $storeURLmedia);
+        }
+        else{
+    		$this->sendRequestFileUpload($fhash, 'audio', $fsize, $filepath, $to);
+    		return true;
+    	}
     }
 
     /**
@@ -1012,13 +1028,23 @@ class WhatsProt
      * @param  string $filepath
      *   The url/uri to the image file.
      * @param  bool $storeURLmedia Keep copy of file
+     * @param  int $fsize size of the media file
+     * @param string $fhash base64 hash of the media file
+     *
      * @return bool
      */
-    public function sendMessageImage($to, $filepath, $storeURLmedia = false, $externalId=null)
+    public function sendMessageImage($to, $filepath, $storeURLmedia = false, $externalId = null, $fsize = 0, $fhash = "")
     {
-        $allowedExtensions = array('jpg', 'jpeg', 'gif', 'png');
-        $size = 5 * 1024 * 1024; // Easy way to set maximum file size for this media type.
-        return $this->sendCheckAndSendMedia($filepath, $size, $to, 'image', $allowedExtensions, $storeURLmedia, $externalId);
+    	if ($fsize==0 || $fhash == "")
+    	{
+        	$allowedExtensions = array('jpg', 'jpeg', 'gif', 'png');
+        	$size = 5 * 1024 * 1024; // Easy way to set maximum file size for this media type.
+        	return $this->sendCheckAndSendMedia($filepath, $size, $to, 'image', $allowedExtensions, $storeURLmedia, $externalId);
+        }
+        else{
+        $this->sendRequestFileUpload($fhash, 'image', $fsize, $filepath, $to);
+    	return true;
+    	}
     }
 
     /**
@@ -1080,13 +1106,23 @@ class WhatsProt
      * @param string $filepath
      *   The url/uri to the MP4/MOV video.
      * @param  bool $storeURLmedia Keep a copy of media file.
+	 * @param  int $fsize size of the media file
+     * @param string $fhash base64 hash of the media file
+     *
      * @return bool
      */
-    public function sendMessageVideo($to, $filepath, $storeURLmedia = false)
+    public function sendMessageVideo($to, $filepath, $storeURLmedia = false, $fsize = 0, $fhash = "")
     {
-        $allowedExtensions = array('3gp', 'mp4', 'mov', 'avi');
-        $size = 20 * 1024 * 1024; // Easy way to set maximum file size for this media type.
-        return $this->sendCheckAndSendMedia($filepath, $size, $to, 'video', $allowedExtensions, $storeURLmedia);
+    	if ($fsize==0 || $fhash == "")
+    	{
+        	$allowedExtensions = array('3gp', 'mp4', 'mov', 'avi');
+        	$size = 20 * 1024 * 1024; // Easy way to set maximum file size for this media type.
+        	return $this->sendCheckAndSendMedia($filepath, $size, $to, 'video', $allowedExtensions, $storeURLmedia);
+        }
+        else{
+    		$this->sendRequestFileUpload($fhash, 'video', $fsize, $filepath, $to);
+    		return true;
+    	}
     }
 
     /**
@@ -1129,7 +1165,7 @@ class WhatsProt
         $messageNode = new ProtocolNode("iq", $messageHash, null, "");
         $this->sendNode($messageNode);
         $this->eventManager()->fireSendPong(
-            $this->phoneNumber, 
+            $this->phoneNumber,
             $msgid
         );
     }
@@ -1160,8 +1196,9 @@ class WhatsProt
         $node = new ProtocolNode("presence", $presence, null, "");
         $this->sendNode($node);
         $this->eventManager()->fireSendPresence(
-            $this->phoneNumber, 
-            $presence['type']
+            $this->phoneNumber,
+            $presence['type'],
+            $this->name
         );
     }
 
@@ -1261,7 +1298,7 @@ class WhatsProt
 
         $this->sendNode($node);
         $this->eventManager()->fireSendStatusUpdate(
-            $this->phoneNumber, 
+            $this->phoneNumber,
             $txt
         );
     }
@@ -1287,6 +1324,29 @@ class WhatsProt
 
         $mediaNode = new ProtocolNode("media", $mediaAttribs, array($vCardNode), "");
         $this->sendMessageNode($to, $mediaNode);
+    }
+
+    /**
+     * Send a vCard to the user/group as Broadcast.
+     *
+     * @param $targets
+     *   Array of recipients to send.
+     * @param $name
+     *   The vCard contact name.
+     * @param $vCard
+     *   The contact vCard to send.
+     */
+	public function sendBroadcastVcard($targets, $name, $vCard)
+    {
+        $vCardAttribs = array();
+        $vCardAttribs['name'] = $name;
+        $vCardNode = new ProtocolNode("vcard", $vCardAttribs, null, $vCard);
+
+        $mediaAttribs = array();
+        $mediaAttribs["type"] = "vcard";
+
+        $mediaNode = new ProtocolNode("media", $mediaAttribs, array($vCardNode), "");
+        $this->sendBroadcast($targets, $mediaNode, "media");
     }
 
     /**
@@ -1324,14 +1384,14 @@ class WhatsProt
 
         if (!empty($url)) {
             $this->eventManager()->fireUploadFile(
-                $this->phoneNumber, 
-                basename($file), 
+                $this->phoneNumber,
+                basename($file),
                 $url
             );
             return $url;
         } else {
             $this->eventManager()->fireUploadFileFailed(
-                $this->phoneNumber, 
+                $this->phoneNumber,
                 basename($file)
             );
             return false;
@@ -1345,7 +1405,7 @@ class WhatsProt
     {
         $received = false;
         do {
-            $this->pollMessages();
+            $this->pollMessage();
             $msgs = $this->getMessages();
             foreach ($msgs as $m) {
                 // Process inbound messages.
@@ -1564,19 +1624,18 @@ class WhatsProt
         $this->sendNode($feat);
         $this->sendNode($auth);
 
-        $this->pollMessages();
-        $cnt = 0;
-        do {
-            $this->pollMessages();
-            if($this->challengeData != null) {
-                $data = $this->createAuthResponseNode();
-                $this->sendNode($data);
-                $this->reader->setKey($this->inputKey);
-                $this->writer->setKey($this->outputKey);
-                $this->pollMessages();
-            }
-        } while ($this->challengeData == null && ($cnt++ < 100) && (strcmp($this->loginStatus, static::DISCONNECTED_STATUS) == 0));
-        
+        $this->pollMessage();
+        $this->pollMessage();
+        $this->pollMessage();
+
+        if($this->challengeData != null) {
+            $data = $this->createAuthResponseNode();
+            $this->sendNode($data);
+            $this->reader->setKey($this->inputKey);
+            $this->writer->setKey($this->outputKey);
+            $this->pollMessage();
+        }
+
         if(strcmp($this->loginStatus, static::DISCONNECTED_STATUS) == 0)
 		{
 			throw new Exception('Login Failure');
@@ -1798,7 +1857,7 @@ class WhatsProt
      * @param string $data
      *   The data to process.
      */
-    protected function processInboundData($data, $autoReceipt = true)
+    protected function processInboundData($data, $autoReceipt = false)
     {
         $node = $this->reader->nextTree($data);
         if( $node != null ) {
@@ -1808,27 +1867,27 @@ class WhatsProt
 
     /**
      * Will process the data from the server after it's been decrypted and parsed.
-     * 
+     *
      * This also provides a convenient method to use to unit test the event framework.
-     * 
+     *
      */
-    protected function processInboundDataNode(ProtocolNode $node, $autoReceipt = true) {
+    protected function processInboundDataNode(ProtocolNode $node, $autoReceipt = false) {
         $this->debugPrint($node->nodeString("rx  ") . "\n");
         $this->serverReceivedId = $node->getAttribute('id');
-        
+
         if ($node->getTag() == "challenge") {
             $this->processChallenge($node);
-        } 
+        }
         elseif($node->getTag() == "failure"  )
 		{
 
 			$this->loginStatus = static::DISCONNECTED_STATUS;
-			
+
 		}
         elseif ($node->getTag() == "success") {
             $this->loginStatus = static::CONNECTED_STATUS;
             $challengeData = $node->getData();
-            file_put_contents("nextChallenge.dat", $challengeData);
+            file_put_contents($this->challengeFilename, $challengeData);
             $this->writer->setKey($this->outputKey);
         } elseif($node->getTag() == "failure")
         {
@@ -1844,6 +1903,16 @@ class WhatsProt
                 $node->getAttribute('from'),
                 $node->getAttribute('id'),
                 $node->getAttribute('class')
+            );
+        }
+        elseif($node->getTag() == 'receipt')
+        {
+            $this->eventManager()->fireMessageReceivedClient(
+                $this->phoneNumber,
+                $node->getAttribute('from'),
+                $node->getAttribute('id'),
+                $node->getAttribute('class'),
+                $node->getAttribute('t')
             );
         }
         if ($node->getTag() == "message") {
@@ -1888,23 +1957,6 @@ class WhatsProt
                 if($autoReceipt)
                 {
                     $this->sendMessageReceived($node);
-                }
-            }
-            if ($node->hasChild('notification') && $node->getChild('notification')->getAttribute('type') == 'picture') {
-                if ($node->getChild('notification')->hasChild('set')) {
-                    $this->eventManager()->fireProfilePictureChanged(
-                        $this->phoneNumber,
-                        $node->getAttribute('from'),
-                        $node->getAttribute('id'),
-                        $node->getAttribute('t')
-                    );
-                } else if ($node->getChild('notification')->hasChild('delete')) {
-                    $this->eventManager()->fireProfilePictureDeleted(
-                        $this->phoneNumber,
-                        $node->getAttribute('from'),
-                        $node->getAttribute('id'),
-                        $node->getAttribute('t')
-                    );
                 }
             }
             if ($node->getAttribute("type") == "media" && $node->getChild('media') != null) {
@@ -2003,20 +2055,6 @@ class WhatsProt
                     $node->getAttribute('t')
                 );
             }
-            if ($node->getAttribute('type') == "subject") {
-                print_r($node);
-                $reset_from = explode('@', $node->getAttribute('from'));
-                $reset_author = explode('@',$node->getAttribute('author'));
-                $this->eventManager()->fireGetGroupsSubject(
-                    $this->phoneNumber,
-                    reset($reset_from),
-                    $node->getAttribute('t'),
-                    reset($reset_author),
-                    reset($reset_author),
-                    $node->getChild(0)->getAttribute('name'),
-                    $node->getChild(2)->getData()
-                );
-            }
         }
         if ($node->getTag() == "presence" && $node->getAttribute("status") == "dirty") {
             //clear dirty
@@ -2029,15 +2067,24 @@ class WhatsProt
                 }
             $this->sendClearDirty($categories);
         }
-        if (strcmp($node->getTag(), "presence") == 0
+	if (strcmp($node->getTag(), "presence") == 0
             && strncmp($node->getAttribute('from'), $this->phoneNumber, strlen($this->phoneNumber)) != 0
-            && strpos($node->getAttribute('from'), "-") == false
-            && $node->getAttribute('type') != null) {
+            && strpos($node->getAttribute('from'), "-") == false) {
+            $presence = array();
+            if($node->getAttribute('type') == null){
             $this->eventManager()->firePresence(
                 $this->phoneNumber,
                 $node->getAttribute('from'),
-                $node->getAttribute('type')
+                $presence['type'] = "available"
             );
+            }
+            else{
+            $this->eventManager()->firePresence(
+                $this->phoneNumber,
+                $node->getAttribute('from'),
+                $presence['type'] = "unavailable"
+            );
+            }
         }
         if ($node->getTag() == "presence"
             && strncmp($node->getAttribute('from'), $this->phoneNumber, strlen($this->phoneNumber)) != 0
@@ -2059,9 +2106,31 @@ class WhatsProt
                 );
             }
         }
+        if (strcmp($node->getTag(), "chatstate") == 0
+            && strncmp($node->getAttribute('from'), $this->phoneNumber, strlen($this->phoneNumber)) != 0
+            && strpos($node->getAttribute('from'), "-") == false) {
+            if($node->getChild(0)->getTag() == "composing"){
+            	$this->eventManager()->fireMessageComposing(
+                	$this->phoneNumber,
+                	$node->getAttribute('from'),
+                	$node->getAttribute('id'),
+                	"composing",
+                	$node->getAttribute('t')
+            	);
+            }
+            else{
+            	$this->eventManager()->fireMessagePaused(
+                	$this->phoneNumber,
+                	$node->getAttribute('from'),
+                	$node->getAttribute('id'),
+                	"paused",
+                	$node->getAttribute('t')
+            	);
+            }
+        }
         if ($node->getTag() == "iq"
             && $node->getAttribute('type') == "get"
-            && $node->getChild(0)->getTag() == "ping") {
+            && $node->getAttribute('xmlns') == "urn:xmpp:ping") {
             $this->eventManager()->firePing(
                 $this->phoneNumber,
                 $node->getAttribute('id')
@@ -2240,12 +2309,53 @@ class WhatsProt
                         $node->getChild(0)->getData()); //status message
                     break;
                 case "picture":
+                    if ($node->hasChild('set')) {
+                        $this->eventManager()->fireProfilePictureChanged(
+                            $this->phoneNumber,
+                            $node->getAttribute('from'),
+                            $node->getAttribute('id'),
+                            $node->getAttribute('t')
+                        );
+                    } else if ($node->hasChild('delete')) {
+                        $this->eventManager()->fireProfilePictureDeleted(
+                            $this->phoneNumber,
+                            $node->getAttribute('from'),
+                            $node->getAttribute('id'),
+                            $node->getAttribute('t')
+                        );
+                    }
                     //TODO
                     break;
                 case "contacts":
                     //TODO
                     break;
                 case "participant":
+                    if ($node->hasChild('remove')) {
+                        $this->eventManager()->fireGroupsParticipantsRemove(
+                            $this->phoneNumber,
+                            $node->getAttribute('from'),
+                            $node->getChild(0)->getAttribute('jid'),
+                            $node->getChild(0)->getAttribute('author')
+                        );
+                    } else if ($node->hasChild('add')) {
+                        $this->eventManager()->fireGroupsParticipantsAdd(
+                            $this->phoneNumber,
+                            $node->getAttribute('from'),
+                            $node->getChild(0)->getAttribute('jid')
+                        );
+                    }
+                    //TODO
+                    break;
+               	case "subject":
+                    $this->eventManager()->fireGetGroupsSubject(
+                        $this->phoneNumber,
+                        $node->getAttribute('from'),
+                        $node->getAttribute('t'),
+                        $node->getAttribute('participant'),
+                        $node->getAttribute('participant'),
+                        $node->getAttribute('notify'),
+                        $node->getChild(0)->getData()
+                    );
                     //TODO
                     break;
                 default:
@@ -2300,7 +2410,7 @@ class WhatsProt
         $ack = new ProtocolNode("ack", $attributes, null, null);
         $this->sendNode($ack);
     }
-    
+
     /**
      * Process and save media image
      *
@@ -2408,11 +2518,11 @@ class WhatsProt
             $url = $duplicate->getAttribute("url");
             $filesize = $duplicate->getAttribute("size");
 //            $mimetype = $duplicate->getAttribute("mimetype");
-//            $filehash = $duplicate->getAttribute("filehash");
+            $filehash = $duplicate->getAttribute("filehash");
             $filetype = $duplicate->getAttribute("type");
 //            $width = $duplicate->getAttribute("width");
 //            $height = $duplicate->getAttribute("height");
-            $exploded = explode("/", $url);  
+            $exploded = explode("/", $url);
             $filename = array_pop($exploded);
         } else {
             //upload new file
@@ -2433,7 +2543,7 @@ class WhatsProt
             $url = $json->url;
             $filesize = $json->size;
 //            $mimetype = $json->mimetype;
-//            $filehash = $json->filehash;
+            $filehash = $json->filehash;
             $filetype = $json->type;
 //            $width = $json->width;
 //            $height = $json->height;
@@ -2446,6 +2556,7 @@ class WhatsProt
         $mediaAttribs["url"] = $url;
         $mediaAttribs["file"] = $filename;
         $mediaAttribs["size"] = $filesize;
+        $mediaAttribs["hash"] = $filehash;
 
         $filepath = $this->mediaQueue[$id]['filePath'];
         $to = $this->mediaQueue[$id]['to'];
@@ -2477,6 +2588,7 @@ class WhatsProt
             $url,
             $filename,
             $filesize,
+            $filehash,
             $icon
         );
 
@@ -2491,7 +2603,6 @@ class WhatsProt
         curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
         $response = curl_exec($curl);
         curl_close($curl);
-
 
         return true;
     }
@@ -2542,8 +2653,8 @@ class WhatsProt
                 $error = "socket EOF, closing socket...";
                 fclose($this->socket);
                 $this->socket = null;
-                $this->eventManager()->fireClose(                        
-                    $this->phoneNumber, 
+                $this->eventManager()->fireClose(
+                    $this->phoneNumber,
                     $error
                 );
             }
@@ -2827,6 +2938,15 @@ class WhatsProt
      */
     protected function sendSetPicture($jid, $filepath)
     {
+    	if(stripos($filepath, 'http')!== false && !preg_match('/\s/',$filepath)){
+		$extension = end(explode(".", $filepath));
+		$newImageName = rand(0, 100000);
+		$imagePath = static::PICTURES_FOLDER."/".$newImageName.".jpg";
+		if($extension == 'jpg'){
+			copy($filepath, $imagePath);
+			$filepath = $imagePath;
+		}
+	}
         preprocessProfilePicture($filepath);
         $fp = @fopen($filepath, "r");
         if ($fp) {
