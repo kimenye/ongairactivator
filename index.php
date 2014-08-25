@@ -48,7 +48,7 @@
 			$nickname = $_POST['nickname'];
 						
 			if ($debug == "true") {
-				return json(array("result" => "", "debug" => $debug));
+				return json(array("result" => "sent", "debug" => $debug));
 			}	
 			else {
 				$w = new WhatsProt($jid, $identity, $nickname, false);
@@ -66,13 +66,28 @@
 		elseif ($method == "register") {		
 			$identity = createIdentity($jid);
 			$nickname = $_POST['nickname'];
+			$debug = $_POST['debug'];
 			$code = $_POST['code'];			
-						
-			$w = new WhatsProt($jid, $identity, $nickname, false);
-			$result = $w->codeRegister($code);
-			$password = $result->pw;						
 
-			return json(array( "identity" => $identity, "jid" => $jid, "test" => $test, "code" => $code, "password" => $password ));
+			if ($debug == "true") {
+				if ($code == "123456") 
+					return json(array("result" => "success", "password" => "1234567890", "debug" => $debug ));
+				else
+					return json(array("result" => "error", "message" => "Error registering code with WhatsApp", "debug" => $debug ));
+			}
+			else {
+				$w = new WhatsProt($jid, $identity, $nickname, false);
+				try
+				{
+					$result = $w->codeRegister($code);
+					$password = $result->pw;						
+					return json(array( "result" => "success", "password" => $password, "debug" => $debug ));	
+				}
+				catch(Exception $e) {
+					return json(array("result" => "error", "message" => $e->getMessage(), "debug" => $debug));
+				}
+				
+			}									
 		}
 		elseif ($method == "setProfilePicture") {
 			$identity = createIdentity($jid);

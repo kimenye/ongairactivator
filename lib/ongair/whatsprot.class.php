@@ -355,9 +355,9 @@ class WhatsProt
                     $this->phoneNumber,
                     $method,
                     $response->reason,
-                    $response->param
+                    null
                 );
-                throw new Exception('There was a problem trying to request the code.');
+                throw new Exception("There was a problem trying to request the code. ".$response->reason);
             }
         } else {
             $this->eventManager()->fireCodeRequest(
