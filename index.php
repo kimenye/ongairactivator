@@ -44,11 +44,24 @@
 		}
 		elseif ($method == "request") {
 			$identity = createIdentity($jid);
-			$nickname = $_POST['nickname'];			
+			$debug = $_POST['debug'];			
+			$nickname = $_POST['nickname'];
 						
-			$w = new WhatsProt($jid, $identity, $nickname, false);
-			$result = $w->codeRequest('sms');
-			return json(array("result" => result->status));
+			if ($debug == "true") {
+				return json(array("result" => "", "debug" => $debug));
+			}	
+			else {
+				$w = new WhatsProt($jid, $identity, $nickname, false);
+				try
+				{
+					$result = $w->codeRequest('sms');
+					return json(array("result" => $result->status, "debug" => $debug));		
+				}
+				catch(Exception $e) {
+					return json(array("result" => "error", "message" => $e->getMessage(), "debug" => $debug));
+				}
+				
+			}			
 		}		
 		elseif ($method == "register") {		
 			$identity = createIdentity($jid);
