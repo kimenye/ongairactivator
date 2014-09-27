@@ -5,7 +5,7 @@
 	$username = $argv[1];
 	$password = $argv[2];
 	$nickname = $argv[3];
-	$identity = $argv[4];
+	$identity = strtolower(sha1($username, false));
 	$method = $argv[5];
 	$args = $argv[6];
 	$targets = $argv[7];
