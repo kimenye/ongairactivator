@@ -7,3 +7,4 @@ runner.php
 jobs.php
 .idea
 .project
+*.dat

@@ -46,6 +46,8 @@
 			$identity = createIdentity($jid);
 			$debug = $_POST['debug'];			
 			$nickname = $_POST['nickname'];
+			$carrier = $_POST['carrier'];
+			$type = $_POST['type'];
 						
 			if ($debug == "true") {
 				return json(array("result" => "sent", "debug" => $debug));
@@ -54,7 +56,7 @@
 				$w = new WhatsProt($jid, $identity, $nickname, false);
 				try
 				{
-					$result = $w->codeRequest('sms');
+					$result = $w->codeRequest($type, $carrier);
 					return json(array("result" => $result->status, "debug" => $debug));		
 				}
 				catch(Exception $e) {
