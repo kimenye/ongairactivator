@@ -431,7 +431,8 @@ class WhatsProt
                         $this->phoneNumber,
                         $method,
                         $response->reason,
-                        $response->param
+                        // $response->param
+                        ""
                     ));
                 throw new Exception('There was a problem trying to request the code.');
             }
