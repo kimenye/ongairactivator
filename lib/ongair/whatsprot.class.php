@@ -434,7 +434,7 @@ class WhatsProt
                         // $response->param
                         ""
                     ));
-                throw new Exception('There was a problem trying to request the code.');
+                throw new Exception("There was a problem trying to request the code. - ".$response->reason);
             }
         } else {
             $this->eventManager()->fire("onCodeRequest",

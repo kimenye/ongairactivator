@@ -50,7 +50,15 @@
 			$type = $_POST['type'];
 						
 			if ($debug == "true") {
-				return json(array("result" => "sent", "debug" => $debug));
+				$error = $_POST['error'];
+				if ($error == "no_routes") {
+					return json(array("result" => "error", "message" => "There was a problem trying to request the code. - no_routes"));
+				}
+				else ($error == "too_recent") {
+					return json(array("result" => "error", "message" => "Code already sent. Retry after 60 minutes."));
+				}
+				else
+					return json(array("result" => "sent", "debug" => $debug));
 			}	
 			else {
 				$w = new WhatsProt($jid, $identity, $nickname, false);
